@@ -1,0 +1,15 @@
+{
+    "name": "willy/framework",
+    "autoload": {
+        "psr-4": {
+            "WillyFramework\\src\\": "src/",
+            "WillyFramework\\pkg\\": "pkg/"
+        }
+    },
+    "authors": [
+        {
+            "name": "willy"
+        }
+    ],
+    "require": {}
+}
