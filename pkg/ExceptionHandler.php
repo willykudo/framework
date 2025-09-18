@@ -3,14 +3,14 @@
 namespace WillyFramework\pkg;
 
 use Throwable;
-use WillyFramework\config\Env;
+use WillyFramework\config\Config;
 
 class ExceptionHandler {
     public static function handle(Throwable $exception): void {
         http_response_code(500);
         header('Content-Type: application/json');
         
-        $debug = Env::get('APP_DEBUG');
+        $debug = Config::get('APP_DEBUG');
 
         $response = [
             'error' => $debug ? $exception->getMessage() : "Internal Server Error"

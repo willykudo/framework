@@ -2,8 +2,6 @@
 
 namespace WillyFramework\config;
 
-use WillyFramework\pkg\ExceptionHandler;
-
 class Env {
     public static function get(string $path): array {
         if(!file_exists($path)) {

@@ -3,18 +3,19 @@
 require __DIR__.'/../vendor/autoload.php';
 
 use WillyFramework\src\Core\App;
-use WillyFramework\src\Core\Database;
-use WillyFramework\pkg\ExceptionHandler;
-
-set_exception_handler([ExceptionHandler::class, 'handle']);
+use WillyFramework\src\Controllers\UserController;
 
 $app = new App();
 
-$db = new Database();
-$connection = $db->getConnection();
+$db = $app->getDb()->getConnection();
+$router = $app->getRouter();
+
+$router->get('/users', [UserController::class, 'index']);
+$router->post('/users', [UserController::class, 'store']);
 
 echo json_encode([
     "status" => "success",
     "message" => "Database connected successfully"
 ]);
 
+$app->run();

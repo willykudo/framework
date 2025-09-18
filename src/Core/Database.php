@@ -7,6 +7,7 @@ use PDOException;
 use WillyFramework\config\Config;
 
 class Database {
+    private static ?Database $instance = null;
     private ?PDO $connection = null;
 
     public function __construct() {
@@ -26,6 +27,13 @@ class Database {
         } catch (PDOException $e) {
             throw new \Exception('Database connection failed : ' . $e->getMessage());
         }
+    }
+
+    public static function getInstance(): Database {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     public function getConnection(): PDO {
