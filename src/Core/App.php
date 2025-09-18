@@ -2,28 +2,20 @@
 
 namespace WillyFramework\src\Core;
 
+use WillyFramework\config\Env;
+
 class App {
-    private array $config;
+    private array $config = [];
 
-    public function __construct(){
-        $this->loadEnv();
-    }
-
-    private function loadEnv():void {
-        $envPath = __DIR__.'/../../.env';
-        if (!file_exists($envPath)) {
-            throw new \Exception(".env file not found");
-        }
-
-        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (str_starts_with(trim($line), '#')) continue;
-            [$key, $value] = explode('=', $line, 2);
-            $this->config[trim($key)] = trim($value);
-        }
+    public function __construct(string $envPath = __DIR__.'/../../.env'){
+        $this->config = Env::get($envPath);
     }
 
     public function getConfig():array {
         return $this->config;
+    }
+
+    public function get(string $key, $default = null){
+        return $this->config[$key] ?? $default;
     }
 }
