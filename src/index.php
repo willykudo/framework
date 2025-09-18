@@ -6,17 +6,15 @@ use WillyFramework\src\Core\App;
 use WillyFramework\src\Core\Database;
 use WillyFramework\pkg\ExceptionHandler;
 
-try{
-    $app = new App();
+set_exception_handler([ExceptionHandler::class, 'handle']);
 
-    $config = $app->getConfig();
+$app = new App();
 
-    $db = new Database($config);
+$db = new Database();
+$connection = $db->getConnection();
 
-    echo json_encode([
-        "message" => "Database connected succesfully"
-    ]);
+echo json_encode([
+    "status" => "success",
+    "message" => "Database connected successfully"
+]);
 
-}catch(\Throwable $e){
-    ExceptionHandler::handle($e);
-}

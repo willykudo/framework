@@ -7,7 +7,7 @@ use WillyFramework\pkg\ExceptionHandler;
 class Env {
     public static function get(string $path): array {
         if(!file_exists($path)) {
-            throw new ExceptionHandler("Env file not found");
+            throw new \Exception("Env file not found");
         }
 
         $config = [];

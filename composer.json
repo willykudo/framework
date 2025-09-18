@@ -3,7 +3,8 @@
     "autoload": {
         "psr-4": {
             "WillyFramework\\src\\": "src/",
-            "WillyFramework\\pkg\\": "pkg/"
+            "WillyFramework\\pkg\\": "pkg/",
+            "WillyFramework\\config\\": "config/"
         }
     },
     "authors": [

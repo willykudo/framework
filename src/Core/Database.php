@@ -4,17 +4,17 @@ namespace WillyFramework\src\Core;
 
 use PDO;
 use PDOException;
-use WillyFramework\pkg\ExceptionHandler;
+use WillyFramework\config\Config;
 
 class Database {
     private ?PDO $connection = null;
 
-    public function __construct(array $config) {
-        $host = $config['DB_HOST'];
-        $port = $config['DB_PORT'];
-        $dbname = $config['DB_DATABASE'];
-        $user = $config['DB_USERNAME'];
-        $pass = $config['DB_PASSWORD'];
+    public function __construct() {
+        $host = Config::get('DB_HOST');
+        $port = Config::get('DB_PORT');
+        $dbname = Config::get('DB_DATABASE');
+        $user = Config::get('DB_USERNAME');
+        $pass = Config::get('DB_PASSWORD');
 
         try {
             $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
@@ -23,8 +23,8 @@ class Database {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
-        } catch (PDOException) {
-            throw new ExceptionHandler('Database connection failed');
+        } catch (PDOException $e) {
+            throw new \Exception('Database connection failed : ' . $e->getMessage());
         }
     }
 

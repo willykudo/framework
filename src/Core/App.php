@@ -2,20 +2,14 @@
 
 namespace WillyFramework\src\Core;
 
-use WillyFramework\config\Env;
+use WillyFramework\config\Config;
 
 class App {
-    private array $config = [];
-
-    public function __construct(string $envPath = __DIR__.'/../../.env'){
-        $this->config = Env::get($envPath);
+    public function __construct(string $envPath = __DIR__.'/../../.env') {
+        Config::load($envPath);
     }
 
-    public function getConfig():array {
-        return $this->config;
-    }
+    public function run(): void {
 
-    public function get(string $key, $default = null){
-        return $this->config[$key] ?? $default;
     }
 }
