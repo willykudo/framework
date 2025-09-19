@@ -2,28 +2,39 @@
 
 namespace WillyFramework\src\Core;
 
+use WillyFramework\config\Config;
+use WillyFramework\pkg\ExceptionHandler;
+use WillyFramework\src\Core\Request;
+use WillyFramework\src\Core\Response;
+use WillyFramework\src\Router\Router;
+
 class App {
-    private array $config;
+    private Router $router;
+    private Request $request;
+    private Response $response;
+    private Database $db;
 
-    public function __construct(){
-        $this->loadEnv();
+    public function __construct(string $envPath = __DIR__.'/../../.env') {
+        Config::load($envPath);
+
+        $this->request = new Request();
+        $this->response = new Response();
+        $this->router = new Router();
+
+        $this->db = Database::getInstance();
+
+        set_exception_handler([ExceptionHandler::class, 'handle']);
     }
 
-    private function loadEnv():void {
-        $envPath = __DIR__.'/../../.env';
-        if (!file_exists($envPath)) {
-            throw new \Exception(".env file not found");
-        }
-
-        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (str_starts_with(trim($line), '#')) continue;
-            [$key, $value] = explode('=', $line, 2);
-            $this->config[trim($key)] = trim($value);
-        }
+    public function getRouter(): Router {
+        return $this->router;
     }
 
-    public function getConfig():array {
-        return $this->config;
+    public function getDb(): Database {
+        return $this->db;
+    }
+
+    public function run(): void {
+        $this->router->resolve($this->request, $this->response);
     }
 }
