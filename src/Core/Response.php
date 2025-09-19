@@ -17,22 +17,25 @@ class Response {
         return $this;
     }
 
-    public function json(array $data): void {
+    public function json(array $data): self {
         $this->setHeader('Content-Type', 'application/json');
         $this->body = json_encode($data, JSON_PRETTY_PRINT);
         $this->send();
+        return $this;
     }
 
-    public function text(string $text):void {
+    public function text(string $text): self {
         $this->setHeader('Content-Type', 'text/plain');
         $this->body = $text;
         $this->send();
+        return $this;
     }
 
-    public function html(string $html): void {
+    public function html(string $html): self {
         $this->setHeader('Content-Type', 'text/html');
         $this->body = $html;
         $this->send();
+        return $this;
     }
 
     private function send(): void {
