@@ -5,12 +5,13 @@ namespace WillyFramework\src\Controllers;
 use WillyFramework\src\Core\Request;
 use WillyFramework\src\Core\Response;
 use WillyFramework\src\Repository\UserRepository;
+use WillyFramework\pkg\Validator;
 
 class UserController {
     private UserRepository $repo;
 
-    public function __construct(){
-        $this->repo = new UserRepository();
+    public function __construct(UserRepository $repo){
+        $this->repo = $repo;
     }
 
     public function index(Request $req, Response $res){
@@ -19,14 +20,22 @@ class UserController {
     }
 
     public function store(Request $req, Response $res){
-        $name = $req->input('name');
-        $email = $req->input(('email'));
+        $rules = [
+            'name' => 'required|min:3|notnull',
+            'email' => 'required|email|notnull'
+        ];
 
-        if(!$name || !$email){
-            return $res->setStatus(400)->json(['error' => 'Name & email required']);
+        $validator = new Validator($req->getBody(), $rules);
+
+        if (!$validator->validate()) {
+            return $res->setStatus(400)->json(['errors' => $validator->getErrors()]);
         }
 
-        $user = $this->repo->create($name, $email);
+        $user = $this->repo->create(
+            $req->input('name'),
+            $req->input('email')
+        );
+
         return $res->setStatus(201)->json(['data' => $user]);
     }
 }

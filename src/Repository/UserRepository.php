@@ -9,8 +9,8 @@ use PDO;
 class UserRepository {
     private PDO $db;
 
-    public function __construct(){
-        $this->db = Database::getInstance()->getConnection();
+    public function __construct(PDO $db){
+        $this->db = $db;
     }
 
     public function findAll(): array {

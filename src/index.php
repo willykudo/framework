@@ -7,11 +7,15 @@ use WillyFramework\src\Controllers\UserController;
 
 $app = new App();
 
-$db = $app->getDb()->getConnection();
 $router = $app->getRouter();
 
-$router->get('/users', [UserController::class, 'index']);
-$router->post('/users', [UserController::class, 'store']);
+$router->get('/users', function($req, $res) use ($container) {
+    $container->get(UserController::class)->index($req, $res);
+})
+
+$router->post('/users', function($req, $res) use ($container) {
+    $container->get(UserController::class)->store($req, $res);
+})
 
 echo json_encode([
     "status" => "success",
