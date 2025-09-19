@@ -4,34 +4,26 @@ namespace WillyFramework\src\Repository;
 
 use WillyFramework\src\Core\Database;
 use WillyFramework\src\Models\User;
+use WillyFramework\src\Core\BaseRepository;
 use PDO;
 
-class UserRepository {
-    private PDO $db;
+class UserRepository extends BaseRepository{
 
     public function __construct(PDO $db){
-        $this->db = $db;
+        parent::__construct($db, 'users');
     }
 
-    public function findAll(): array {
-        $stmt = $this->db->query("SELECT id, name, email FROM users");
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    public function findAll(array $columns = ['id', 'name', 'email']): array {
+        $rows = parent::findAll($columns);
         return array_map(fn($r) => new User($r), $rows);
     }
 
-    public function create(string $name, string $email): ?User {
-       try {
-            $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (:name, :email)");
-            $stmt->execute([
-                'name' => $name, 
-                'email' => $email
-            ]);
+    public function createUser(string $name, string $email): User {
+      $id = parent::create([
+        'name' => $name,
+        'email' => $email
+      ]);
 
-            $id = $this->db->lastInsertId();
-            return new User(['id' => $id, 'name' => $name, 'email' => $email]);
-       }catch (PDOException $e){
-        throw new \Exception("Data failed to create");
-       }
+      return new User(['id' => $id, 'name' => $name, 'email' => $email]);
     }
 }
