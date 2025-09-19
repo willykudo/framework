@@ -14,15 +14,24 @@ class UserRepository {
     }
 
     public function findAll(): array {
-        $stmt = $this->db->query("SELECT * FROM users");
-        $rows = $stmt->fetchAll();
+        $stmt = $this->db->query("SELECT id, name, email FROM users");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return array_map(fn($r) => new User($r), $rows);
     }
 
-    public function create(string $name, string $email): User {
-        $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (?, ?)");
-        $stmt->execute([$name, $email]);
-        $id = $this->db->lastInsertId();
-        return new User(['id' => $id, 'name' => $name, 'email' => $email]);
+    public function create(string $name, string $email): ?User {
+       try {
+            $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (:name, :email)");
+            $stmt->execute([
+                'name' => $name, 
+                'email' => $email
+            ]);
+
+            $id = $this->db->lastInsertId();
+            return new User(['id' => $id, 'name' => $name, 'email' => $email]);
+       }catch (PDOException $e){
+        throw new \Exception("Data failed to create");
+       }
     }
 }
