@@ -52,10 +52,13 @@ class BaseRepository {
 
     public function where(array $conditions, array $columns = ['*']): array {
         $cols = implode(',', $columns);
-        $where = implode(' AND ', array_map(fn($key) => "{$key} = :{$key}", array_keys($conditions)));
+        $where = implode(' AND ', array_map(fn($key) => "{$key} LIKE :{$key}", array_keys($conditions)));
 
         $stmt = $this->db->prepare("SELECT {$cols} FROM {$this->table} WHERE {$where}");
-        $stmt->execute($conditions);
+        foreach ($conditions as $key => $value){
+            $stmt->bindValue(":$key", "%$value%");
+        }
+        $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
