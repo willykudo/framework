@@ -1,24 +1,25 @@
-clone repo 
+*Mini PHP Framework*
+
+*1. clone repo* 
 git clone https://github.com/willykudo/framework.git for HTTPS
 git clone git@github.com:willykudo/framework.git for SSH
 
-
-install dependency
+*2. install dependency*
 composer install
 
-copy file .env.example to .env
+*3. copy file .env.example to .env*
 copy .env.example .env
 
-make migrate
+*4. make migrate*
 php willy.php migrate
 
-make seeder 
+*5. make seeder* 
 php willy.php seed
 
-run server
+*6. run server*
 php willy.php serve
 
-requirement:
+*7. requirement:*
 php 8.3.21
 mysql 8.0
 laragon 6.0
