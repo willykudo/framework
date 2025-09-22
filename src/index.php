@@ -1,14 +1,11 @@
 <?php
 
-require __DIR__.'/../vendor/autoload.php';
+$app = require __DIR__.'/../bootstrap.php';
 
-use WillyFramework\src\Core\App;
 use WillyFramework\src\Controllers\UserController;
 use WillyFramework\src\Middleware\AuthMiddleware;
 
 $container = require __DIR__.'/../config/Services.php';
-
-$app = new App();
 
 $router = $app->getRouter();
 

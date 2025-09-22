@@ -1,6 +1,7 @@
 <?php
 
-$db = require __DIR__ . '/bootstrap.php';
+$app = require __DIR__ . '/bootstrap.php';
+$db = $app->getDb();
 
 $migrationFiles = glob(__DIR__ . '/database/migrations/*.php');
 
