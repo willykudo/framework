@@ -4,7 +4,8 @@
         "psr-4": {
             "WillyFramework\\src\\": "src/",
             "WillyFramework\\pkg\\": "pkg/",
-            "WillyFramework\\config\\": "config/"
+            "WillyFramework\\config\\": "config/",
+            "WillyFramework\\database\\": "database/"
         }
     },
     "authors": [
@@ -12,5 +13,7 @@
             "name": "willy"
         }
     ],
-    "require": {}
+    "require": {
+        "fakerphp/faker": "^1.24"
+    }
 }
