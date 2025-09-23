@@ -2,7 +2,6 @@
 
 namespace WillyFramework\src\Repository;
 
-use WillyFramework\src\Core\Database;
 use WillyFramework\src\Models\User;
 use WillyFramework\src\Core\BaseRepository;
 use PDO;
