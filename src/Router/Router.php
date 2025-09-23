@@ -38,6 +38,18 @@ class Router {
         $this->addRoute('DELETE', $path, $handler, $middlewares);
     }
 
+    protected function parseRoute(string $path): string {
+        return preg_replace([
+            '/{id}/',
+            '/{slug}/',
+            '/{any}/'
+        ], [
+            '{id:\d+}',
+            '{slug:[a-z0-9\-]+}', 
+            '{any:.*}'
+        ], $path);
+    }
+
     // implement reflection class
     public function resource(string $basePath, string $controller, array $middlewares = []) {
         $ref = new \ReflectionClass($controller);
@@ -45,15 +57,16 @@ class Router {
         // mapping HTTP + Path
         $routes = [
             'index' => ['GET', $basePath],
-            'show' => ['GET', $basePath.'/{id}'],
-            'store' => ['POST', $basePath],
-            'update' => ['PUT', $basePath.'/{id}'],
-            'destroy' => ['DELETE', $basePath.'/{id}'],
             'search' => ['GET', $basePath.'/search'],
+            'show' => ['GET', $basePath.'/{id:\d+}'],
+            'store' => ['POST', $basePath],
+            'update' => ['PUT', $basePath.'/{id:\d+}'],
+            'destroy' => ['DELETE', $basePath.'/{id:\d+}'],
         ];
 
         foreach ($routes as $method => [$httpVerb, $path]) {
             if ($ref->hasMethod($method)) {
+                $parsed = $this->parseRoute($path);
                 $this->{strtolower($httpVerb)}($path, [$controller, $method], $middlewares);
             }
         }
