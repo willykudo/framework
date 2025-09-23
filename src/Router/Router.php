@@ -5,6 +5,7 @@ namespace WillyFramework\src\Router;
 use WillyFramework\src\Core\Request;
 use WillyFramework\src\Core\Response;
 use WillyFramework\src\Core\Container;
+use WillyFramework\pkg\ExceptionHandler;
 
 class Router {
     private array $routes = [];
