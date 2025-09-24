@@ -22,12 +22,15 @@ class UserSeeder {
                 $rowsThisBatch = min($batchSize, $count - ($b * $batchSize));
 
                 for ($i = 0; $i < $rowsThisBatch; $i++) {
-                    $placeholders[] = "(?, ?)";
+                    $placeholders[] = "(?, ?, ?, ?, ?)";
                     $values[] = $faker->name();
                     $values[] = $faker->unique()->safeEmail();
+                    $values[] = password_hash($faker->password(8, 16), PASSWORD_BCRYPT);
+                    $values[] = $faker->randomElement(['user', 'admin', 'employee']);
+                    $values[] = $faker->randomElement(['active', 'inactive', 'banned']);
                 }
 
-                $sql = "INSERT INTO users (name, email) VALUES " . implode(",", $placeholders);
+                $sql = "INSERT INTO users (name, email, password, role, status) VALUES " . implode(",", $placeholders);
                 $stmt = $db->prepare($sql);
                 $stmt->execute($values);
             }

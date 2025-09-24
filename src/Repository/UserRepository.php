@@ -15,74 +15,64 @@ class UserRepository extends BaseRepository{
         parent::__construct($db, 'users');
     }
 
-    public function findAll(array $columns = ['id', 'name', 'email']): array {
+    public function findAll(array $columns = ['*']): array {
         $rows = parent::findAll($columns);
-        if ($rows === false) {
-            throw new DatabaseException("Failed to fetch users");
-        }
+        if ($rows === false) throw new DatabaseException("Failed to fetch users");
         return array_map(fn($r) => new User($r), $rows);
     }
 
-    public function findUser(int $id, array $columns = ['id', 'name', 'email']): User {
+    public function findUser(int $id, array $columns = ['*']): User {
         $row = parent::find($id, $columns);
-        if (!$row) {
-            throw new NotFoundException("User with ID {$id} not found");
-        }
+        if (!$row) throw new NotFoundException("User with ID {$id} not found");
         return new User($row);
     }
 
-    public function createUser(string $name, string $email): ?User {
-      if(!$name || !$email) {
-        throw new ValidationException("Name and Email cannot be emoty");
-      }
-
+    public function createUser(string $name, string $email, string $password, string $role, string $status): ?User {
       $id = parent::create([
         'name' => $name,
-        'email' => $email
+        'email' => $email,
+        'password' => password_hash($password, PASSWORD_BCRYPT),
+        'role' => $role,
+        'status' => $status,
       ]);
 
-      if (!$id){
-        throw new DatabaseException("Failed to create user");
-      }
+      if (!$id) throw new DatabaseException("Failed to create user");
 
-      return new User(['id' => $id, 'name' => $name, 'email' => $email]);
+      return new User([
+            'id' => $id, 
+            'name' => $name, 
+            'email' => $email,
+            'password' => $password,
+            'role' => $role,
+            'status' => $status,
+        ]);
     }
 
     public function updateUser(int $id, array $data): ?User {
-        if (empty($data)) {
-            throw new ValidationException("No data provided to update");
+        if (isset($data['password'])) {
+            $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         }
         
         $succes = parent::update($id, $data);
-        if (!$succes){
-            throw new NotFoundException("User with {$id} not found or not updated");
-        }
+        if (!$succes) throw new NotFoundException("User with {$id} not found or not updated");
 
         $row = parent::find($id);
-        if (!$row){
-            throw new DatabaseException("Failed to retrieve update user");
-        }
+        if (!$row) throw new DatabaseException("Failed to retrieve update user");
 
         return new User ($row);
     }
 
     public function deleteUser(int $id): bool {
         $deleted = parent::delete($id);
-        if (!$deleted) {
-            throw new NotFoundException("User with {$id} not found");
-        }
+        if (!$deleted) throw new NotFoundException("User with {$id} not found");
         return true;
     }
 
-    public function searchUsers(array $conditions, array $columns = ['id', 'name', 'email']): array {
-        if (empty($conditions)) {
-            throw new ValidationException("At least one parameter (name or email) is required");
-        }
+    public function searchUsers(array $conditions, array $columns = ['*']): array {
+        if (empty($conditions)) throw new ValidationException("At least one parameter is required");
         
         $rows = parent::where($conditions, $columns);
-        if ($rows === false) {
-            throw new DatabaseException("Failed to search users");
-        }
+        if ($rows === false) throw new DatabaseException("Failed to search users");
         
         return array_map(fn($r)=> new User($r), $rows);
     }

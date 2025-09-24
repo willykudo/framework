@@ -27,8 +27,11 @@ class UserController extends BaseController {
 
     public function store(Request $req, Response $res){
         $validator = new Validator($req->getBody(), [
-            'name' => 'required|min:3|notnull',
+            'name' => 'required|min:3|notnull|max:255',
             'email' => 'required|email|notnull',
+            'password' => 'required|min:6|notnull|max:255',
+            'role' => 'required|notnull',
+            'status' => 'required|notnull',
         ]);
 
         if (!$validator->validate()) {
@@ -37,25 +40,36 @@ class UserController extends BaseController {
 
         $user = $this->repo->createUser(
             $req->input('name'),
-            $req->input('email')
+            $req->input('email'),
+            $req->input('password'),
+            $req->input('role'),
+            $req->input('status')
         );
 
         return $this->jsonResponse($res, ['data' => $user], 201);
     }
 
     public function update(Request $req, Response $res, int $id) {
-        $data = $req->getBody();
-        $user = $this->repo->updateUser($id, $data);
+        $validator = new Validator($req->getBody(), [
+            'name' => 'min:3|max:255',
+            'password' => 'min:6|max:255',
+        ]);
+
+        if (!$validator->validate()) {
+            return $res->setStatus(400)->json(['errors' => $validator->getErrors()]);
+        }
+
+        $user = $this->repo->updateUser($id, $req->getBody());
         return $this->jsonResponse($res, ['data' => $user]);
     }
 
     public function destroy(Request $req, Response $res, int $id){
-        $deleted = $this->repo->deleteUser($id);
+        $this->repo->deleteUser($id);
         return $this->jsonResponse($res, ['message'=> 'User deleted successfully']);
     }
 
    public function search(Request $req, Response $res) {
-        $users = $this->repo->searchUsers($req->getBody());
+        $users = $this->repo->searchUsers($req->getQueryParams());
         return $this->jsonResponse($res, ['data' => $users]);
     }
 }
