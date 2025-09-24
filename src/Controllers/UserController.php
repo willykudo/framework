@@ -6,6 +6,7 @@ use WillyFramework\src\Core\Request;
 use WillyFramework\src\Core\Response;
 use WillyFramework\src\Repository\UserRepository;
 use WillyFramework\src\Core\BaseController;
+use WillyFramework\src\Resources\UserResource;
 use WillyFramework\pkg\Validator;
 
 class UserController extends BaseController {
@@ -17,12 +18,14 @@ class UserController extends BaseController {
 
     public function index(Request $req, Response $res){
         $users = $this->repo->findAll();
-        return $this->jsonResponse($res, ['data' => $users]);
+        $resource = new UserResource($users);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function show(Request $req, Response $res, int $id){
         $user = $this->repo->findUser($id);
-        return $this->jsonResponse($res, ['data' => $user]);
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function store(Request $req, Response $res){
@@ -46,7 +49,8 @@ class UserController extends BaseController {
             $req->input('status')
         );
 
-        return $this->jsonResponse($res, ['data' => $user], 201);
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()], 201);
     }
 
     public function update(Request $req, Response $res, int $id) {
@@ -59,8 +63,10 @@ class UserController extends BaseController {
             return $res->setStatus(400)->json(['errors' => $validator->getErrors()]);
         }
 
+        
         $user = $this->repo->updateUser($id, $req->getBody());
-        return $this->jsonResponse($res, ['data' => $user]);
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function destroy(Request $req, Response $res, int $id){
@@ -70,6 +76,7 @@ class UserController extends BaseController {
 
    public function search(Request $req, Response $res) {
         $users = $this->repo->searchUsers($req->getQueryParams());
-        return $this->jsonResponse($res, ['data' => $users]);
+        $resource = new UserResource($users);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 }
