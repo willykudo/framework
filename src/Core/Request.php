@@ -23,7 +23,22 @@ class Request {
             }
         }
 
-        $this->headers = getallheaders() ?: [];
+        $this->headers = $this->getAllHeadersPolyfill();
+    }
+
+    private function getAllHeadersPolyfill(): array {
+        if (function_exists('getallheaders')) {
+            return getallheaders();
+        }
+
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (str_starts_with($name, 'HTTP_')) {
+                $header = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
+                $headers[$header] = $value;
+            }
+        }
+        return $headers;
     }
 
     public function getMethod(): string {

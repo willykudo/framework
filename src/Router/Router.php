@@ -4,90 +4,116 @@ namespace WillyFramework\src\Router;
 
 use WillyFramework\src\Core\Request;
 use WillyFramework\src\Core\Response;
+use WillyFramework\src\Core\Container;
+use WillyFramework\pkg\ExceptionHandler;
 
 class Router {
     private array $routes = [];
+    private Container $container;
 
-    public function get(string $path, callable|array $handler, array $middlewares = []) {
-        $this->routes['GET'][$path] = [
+    public function __construct(Container $container) {
+        $this->container = $container;
+    }
+
+    public function addRoute(string $httpMethod, string $path, callable|array $handler, array $middlewares = []): void {
+        $this->routes[strtoupper($httpMethod)][$path] = [
             'handler' => $handler,
             'middlewares' => $middlewares
         ];
     }
 
-    public function post(string $path, callable|array $handler, array $middlewares = []) {
-        $this->routes['POST'][$path] = [
-            'handler' => $handler,
-            'middlewares' => $middlewares,
-        ];
+    public function get(string $path, callable|array $handler, array $middlewares=[]): void {
+        $this->addRoute('GET', $path, $handler, $middlewares);
     }
 
-    public function put(string $path, callable $handler, array $middlewares = []) {
-        $this->routes['PUT'][$path] = [
-            'handler' => $handler,
-            'middlewares' => $middlewares
-        ];
+    public function post(string $path, callable|array $handler, array $middlewares=[]): void {
+        $this->addRoute('POST', $path, $handler, $middlewares);
     }
 
-    public function delete(string $path, callable $handler, array $middlewares = []) {
-        $this->routes['DELETE'][$path] = [
-            'handler' => $handler,
-            'middlewares' => $middlewares
-        ];
+    public function put(string $path, callable|array $handler, array $middlewares=[]): void {
+        $this->addRoute('PUT', $path, $handler, $middlewares);
     }
 
-    public function resolve(Request $request, Response $response) {
-        $method = $request->getMethod();
-        $uri = $request->getUri();
+    public function delete(string $path, callable|array $handler, array $middlewares=[]): void {
+        $this->addRoute('DELETE', $path, $handler, $middlewares);
+    }
 
-        $routes = $this->routes[$method] ?? [];
+    protected function parseRoute(string $path): string {
+        return preg_replace([
+            '/{id}/',
+            '/{slug}/',
+            '/{any}/'
+        ], [
+            '{id:\d+}',
+            '{slug:[a-z0-9\-]+}', 
+            '{any:.*}'
+        ], $path);
+    }
 
-        foreach ($routes as $path => $route) {
-            $handler = $route['handler'];
-            $middlewares = $route['middlewares'];
+    // implement reflection class
+    public function resource(string $basePath, string $controller, array $middlewares = []) {
+        $ref = new \ReflectionClass($controller);
 
-            // bedain {id} dengan parameter lain
-            $pattern = preg_replace_callback(
-                '#\{([^/]+)\}#',
-                function ($matches) {
-                    return $matches[1] === 'id' ? '(\d+)' : '([^/]+)';
-                },
-                $path
-            );
+        // mapping HTTP + Path
+        $routes = [
+            'index' => ['GET', $basePath],
+            'search' => ['GET', $basePath.'/search'],
+            'show' => ['GET', $basePath.'/{id:\d+}'],
+            'store' => ['POST', $basePath],
+            'update' => ['PUT', $basePath.'/{id:\d+}'],
+            'destroy' => ['DELETE', $basePath.'/{id:\d+}'],
+        ];
 
-            $pattern = "#^" . $pattern . "$#";
-
-            if (preg_match($pattern, $uri, $matches)) {
-                array_shift($matches); 
-                
-                $next = function($request, $response) use ($handler, $matches){
-                    if (is_callable($handler)) {
-                        call_user_func_array($handler, array_merge([$request, $response], $matches));
-                        return;
-                    }
-
-                    if (is_array($handler)) {
-                        [$controller, $method] = $handler;
-                        $controllerInstance = new $controller();
-                        return call_user_func_array([$controllerInstance, $method], array_merge([$request, $response], $matches));  
-                    }
-                };
-
-                foreach (array_reverse($middlewares) as $middleware) {
-                    $next = function($request, $response) use ($middleware, $next) {
-                        $instance = new $middleware();
-                        return $instance->handle($request, $response, $next);
-                    };
-                }
-
-                return $next($request, $response);
-            };
+        foreach ($routes as $method => [$httpVerb, $path]) {
+            if ($ref->hasMethod($method)) {
+                $parsed = $this->parseRoute($path);
+                $this->{strtolower($httpVerb)}($path, [$controller, $method], $middlewares);
+            }
         }
-       
-        $response->setStatus(404)->json([
-            'error'  => 'Route not found',
-            'method' => $method,
-            'uri'    => $uri
-        ]);
+    }
+
+    // implement trycatch exception
+    public function resolve(Request $request, Response $response) {
+        try {
+            $method = $request->getMethod();
+            $uri = $request->getUri();
+
+            foreach ($this->routes[$method] ?? [] as $path => $route) {
+                $pattern = "#^" . preg_replace('#\{([^/]+)\}#', '([^/]+)', $path) . "$#";
+
+                if (preg_match($pattern, $uri, $matches)) {
+                    array_shift($matches); 
+                    
+                    $handler = $this->buildHandler($route['handler'], $matches);
+                    $pipeline = $this->applyMiddlewares($route['middlewares'], $handler);
+
+                    return $pipeline($request, $response);
+                };
+            }
+        } catch (\Throwable $e) {
+            ExceptionHandler::handle($e);
+        }
+    }
+
+    // solve resource dependency injection
+    private function buildHandler(callable|array $handler, array $params): callable {
+       return function($req, $res) use ($handler, $params){
+            if (is_array($handler)) {
+                [$ctrl, $method] = $handler;
+                $ctrl = $this->container->get($ctrl);
+                return call_user_func_array([$ctrl,$method], array_merge([$req, $res], $params));
+            }
+        };
+    }
+
+    private function applyMiddlewares(array $middlewares, callable $handler): callable {
+        return array_reduce(
+            array_reverse($middlewares),
+                fn($next, $m) => function($req, $res) use ($m, $next) {
+                $instance = new $m();
+                return $instance->handle($req, $res, $next);
+            },
+            $handler
+        );
     }
 }

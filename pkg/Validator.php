@@ -25,7 +25,7 @@ class Validator {
 
                 $method = "validate".ucfirst($rule); 
                 if (method_exists($this, $method)) {
-                    $this->$method($field, ...$params);   // ✅ betul
+                    $this->$method($field, ...$params); 
                 }
             }
         }

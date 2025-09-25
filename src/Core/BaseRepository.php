@@ -23,8 +23,7 @@ class BaseRepository {
         $cols = implode(',', $columns);
         $stmt = $this->db->prepare("SELECT {$cols} FROM {$this->table} WHERE id = :id LIMIT 1");
         $stmt->execute(['id' => $id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function create(array $data): int {
@@ -39,8 +38,11 @@ class BaseRepository {
     }
 
     public function update(int $id, array $data): bool {
+        if(empty($data)) return false;
+
         $set = implode(',', array_map(fn($key) => "{$key} = :{$key}", array_keys($data)));
         $data['id'] = $id;
+
         $stmt = $this->db->prepare("UPDATE {$this->table} SET {$set} WHERE id = :id");
         return $stmt->execute($data);
     }
@@ -52,11 +54,20 @@ class BaseRepository {
 
     public function where(array $conditions, array $columns = ['*']): array {
         $cols = implode(',', $columns);
-        $where = implode(' AND ', array_map(fn($key) => "{$key} = :{$key}", array_keys($conditions)));
 
+        $filters = [];
+        foreach ($conditions as $key => $value) {
+            $filters[] = "{$key} LIKE :{$key}";
+        }
+
+        $where = implode(' AND ', $filters);
         $stmt = $this->db->prepare("SELECT {$cols} FROM {$this->table} WHERE {$where}");
-        $stmt->execute($conditions);
-
+        
+        foreach ($conditions as $key => $value){
+            $stmt->bindValue(":$key", "%$value%");
+        }
+        
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

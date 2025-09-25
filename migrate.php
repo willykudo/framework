@@ -1,13 +1,7 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
-
-use WillyFramework\src\Core\Database;
-use WillyFramework\config\Config;
-
-Config::load(__DIR__ . '/.env'); 
-
-$db = Database::getInstance()->getConnection();
+$app = require __DIR__ . '/bootstrap.php';
+$db = $app->getDb();
 
 $migrationFiles = glob(__DIR__ . '/database/migrations/*.php');
 

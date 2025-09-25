@@ -6,6 +6,7 @@ use WillyFramework\src\Core\Request;
 use WillyFramework\src\Core\Response;
 use WillyFramework\src\Repository\UserRepository;
 use WillyFramework\src\Core\BaseController;
+use WillyFramework\src\Resources\UserResource;
 use WillyFramework\pkg\Validator;
 
 class UserController extends BaseController {
@@ -17,24 +18,24 @@ class UserController extends BaseController {
 
     public function index(Request $req, Response $res){
         $users = $this->repo->findAll();
-        return $this->jsonResponse($res, ['data' => $users]);
+        $resource = new UserResource($users);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function show(Request $req, Response $res, int $id){
         $user = $this->repo->findUser($id);
-        if (!$user) {
-            return $res->setStatus(404)->json(['error' => 'User not found']);
-        }
-        return $this->jsonResponse($res, ['data' => $user]);
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function store(Request $req, Response $res){
-        $rules = [
-            'name' => 'required|min:3|notnull',
+        $validator = new Validator($req->getBody(), [
+            'name' => 'required|min:3|notnull|max:255',
             'email' => 'required|email|notnull',
-        ];
-
-        $validator = new Validator($req->getBody(), $rules);
+            'password' => 'required|min:6|notnull|max:255',
+            'role' => 'required|notnull',
+            'status' => 'required|notnull',
+        ]);
 
         if (!$validator->validate()) {
             return $res->setStatus(400)->json(['errors' => $validator->getErrors()]);
@@ -42,59 +43,40 @@ class UserController extends BaseController {
 
         $user = $this->repo->createUser(
             $req->input('name'),
-            $req->input('email')
+            $req->input('email'),
+            $req->input('password'),
+            $req->input('role'),
+            $req->input('status')
         );
 
-        return $this->jsonResponse($res, ['data' => $user], 201);
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()], 201);
     }
 
     public function update(Request $req, Response $res, int $id) {
-        $data = $req->getBody();
+        $validator = new Validator($req->getBody(), [
+            'name' => 'min:3|max:255',
+            'password' => 'min:6|max:255',
+        ]);
 
-        if (empty($data)) {
-            return $res->setStatus(400)->json(['error' => 'No data provided']);
+        if (!$validator->validate()) {
+            return $res->setStatus(400)->json(['errors' => $validator->getErrors()]);
         }
 
-        $user = $this->repo->updateUser($id, $data);
-
-        if (!$user) {
-            return $res->setStatus(404)->json(['error' => 'User not found or not updated']);
-        }
-
-        return $this->jsonResponse($res, ['data' => $user]);
+        
+        $user = $this->repo->updateUser($id, $req->getBody());
+        $resource = new UserResource($user);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 
     public function destroy(Request $req, Response $res, int $id){
-        $deleted = $this->repo->deleteUser($id);
-
-        if (!$deleted) {
-            return $res->setStatus(404)->json(['error' => 'User not found']);
-        }
-
+        $this->repo->deleteUser($id);
         return $this->jsonResponse($res, ['message'=> 'User deleted successfully']);
     }
 
    public function search(Request $req, Response $res) {
-        $conditions = [];
-
-        $name = $req->input('name');
-        if ($name) {
-            $conditions['name'] = $name;
-        }
-
-        $email = $req->input('email');
-        if ($email) {
-            $conditions['email'] = $email;
-        }
-
-        if (empty($conditions)) {
-            return $res->setStatus(400)->json([
-                'error' => 'At least one parameter (name or email) is required'
-            ]);
-        }
-
-        $users = $this->repo->searchUsers($conditions);
-
-        return $this->jsonResponse($res, ['data' => $users]);
+        $users = $this->repo->searchUsers($req->getQueryParams());
+        $resource = new UserResource($users);
+        return $this->jsonResponse($res, ['data' => $resource->toArray()]);
     }
 }
